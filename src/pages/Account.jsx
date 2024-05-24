@@ -20,15 +20,20 @@ const Account = () => {
   }, []);
 
   useEffect(() => {
-    const signInAnonymously = async () => {
-      const { data, error } = await supabase.auth.signInAnonymously();
-      if (error) {
-        console.error("Error signing in anonymously:", error);
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setUserId(session.user.id);
       } else {
-        setUserId(data.user.id);
+        const { data, error } = await supabase.auth.signInAnonymously();
+        if (error) {
+          console.error("Error signing in anonymously:", error);
+        } else {
+          setUserId(data.user.id);
+        }
       }
     };
-    signInAnonymously();
+    checkSession();
   }, []);
 
   const handleUpdate = async () => {
