@@ -3,6 +3,7 @@ import { supabase } from "../integrations/supabase/api";
 import { Container, VStack, Input, Button, Text } from "@chakra-ui/react";
 
 const Account = () => {
+  const [userId, setUserId] = useState(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
@@ -13,8 +14,21 @@ const Account = () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
       setEmail(user.email);
+      setUserId(user.id);
     };
     fetchUser();
+  }, []);
+
+  useEffect(() => {
+    const signInAnonymously = async () => {
+      const { data, error } = await supabase.auth.signInAnonymously();
+      if (error) {
+        console.error("Error signing in anonymously:", error);
+      } else {
+        setUserId(data.user.id);
+      }
+    };
+    signInAnonymously();
   }, []);
 
   const handleUpdate = async () => {

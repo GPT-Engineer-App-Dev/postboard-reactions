@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "../integrations/supabase/api";
 import { usePosts, useAddPost, useAddReaction } from '../integrations/supabase/api';
 import { Container, VStack, Text, Box, Input, Button, HStack, IconButton } from "@chakra-ui/react";
 import { FaThumbsUp, FaThumbsDown, FaLaugh, FaSadTear } from "react-icons/fa";
@@ -8,15 +9,29 @@ const Index = () => {
   const addPostMutation = useAddPost();
   const addReactionMutation = useAddReaction();
   const [newPost, setNewPost] = useState("");
+  const [userId, setUserId] = useState(null);
+
+  useEffect(() => {
+    const signInAnonymously = async () => {
+      const { data, error } = await supabase.auth.signInAnonymously();
+      if (error) {
+        console.error("Error signing in anonymously:", error);
+      } else {
+        setUserId(data.user.id);
+      }
+    };
+    signInAnonymously();
+  }, []);
 
   const addPost = () => {
-    if (newPost.trim() === "") return;
-    addPostMutation.mutate({ title: newPost, body: newPost, author_id: 'user-id-placeholder' });
+    if (newPost.trim() === "" || !userId) return;
+    addPostMutation.mutate({ title: newPost, body: newPost, author_id: userId });
     setNewPost("");
   };
 
   const addReaction = (postId, reaction) => {
-    addReactionMutation.mutate({ post_id: postId, emoji: reaction, user_id: 'user-id-placeholder' });
+    if (!userId) return;
+    addReactionMutation.mutate({ post_id: postId, emoji: reaction, user_id: userId });
   };
 
   if (postsLoading) return <Text>Loading...</Text>;
