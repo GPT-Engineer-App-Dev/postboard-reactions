@@ -43,6 +43,13 @@ const Index = () => {
   if (postsLoading) return <Text>Loading...</Text>;
   if (postsError) return <Text>Error loading posts</Text>;
 
+  const groupBy = (array, key) => {
+    return array.reduce((result, currentValue) => {
+      (result[currentValue[key]] = result[currentValue[key]] || []).push(currentValue);
+      return result;
+    }, {});
+  }
+
   return (
     <Container centerContent maxW="container.md" py={10}>
       <VStack spacing={4} width="100%">
@@ -60,34 +67,12 @@ const Index = () => {
             <Box key={post.id} p={4} borderWidth="1px" borderRadius="md" width="100%">
               <Text mb={2}>{post.title}</Text>
               <HStack spacing={4}>
-                <IconButton
-                  aria-label="Like"
-                  icon={<FaThumbsUp />}
-                  onClick={() => handleReaction(post.id, "👍")}
-                  colorScheme={post.reactions.some(r => r.user_id === userId && r.emoji === "👍") ? "blue" : "gray"}
-                />
-                <Text>{post.reactions.filter(r => r.emoji === "👍").length}</Text>
-                <IconButton
-                  aria-label="Dislike"
-                  icon={<FaThumbsDown />}
-                  onClick={() => handleReaction(post.id, "👎")}
-                  colorScheme={post.reactions.some(r => r.user_id === userId && r.emoji === "👎") ? "blue" : "gray"}
-                />
-                <Text>{post.reactions.filter(r => r.emoji === "👎").length}</Text>
-                <IconButton
-                  aria-label="Laugh"
-                  icon={<FaLaugh />}
-                  onClick={() => handleReaction(post.id, "😂")}
-                  colorScheme={post.reactions.some(r => r.user_id === userId && r.emoji === "😂") ? "blue" : "gray"}
-                />
-                <Text>{post.reactions.filter(r => r.emoji === "😂").length}</Text>
-                <IconButton
-                  aria-label="Sad"
-                  icon={<FaSadTear />}
-                  onClick={() => handleReaction(post.id, "😢")}
-                  colorScheme={post.reactions.some(r => r.user_id === userId && r.emoji === "😢") ? "blue" : "gray"}
-                />
-                <Text>{post.reactions.filter(r => r.emoji === "😢").length}</Text>
+                {Object.entries({...Object.fromEntries('👍 ,👍 ,🤩 '.split(',').map(e=> [e,[]])), ...groupBy(post.reactions, 'emoji')}).map(([emoji, reactions])=> (<Button
+                  key={emoji}
+                  aria-label="React"
+                  onClick={()=> handleReaction(post.id, emoji)}
+                  colorScheme={reactions.some(r => r.user_id === userId) ? "blue" : "gray"}
+                >{reactions.length? reactions.length+'  ': ''}{emoji}</Button>))}
               </HStack>
             </Box>
           ))}

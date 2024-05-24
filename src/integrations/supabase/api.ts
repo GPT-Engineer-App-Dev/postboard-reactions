@@ -14,9 +14,9 @@ export const usePosts = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('posts')
-        .select('*, reactions(*, user:users(*))');
+        .select(`*, reactions(*)`)
       if (error) throw new Error(error.message);
-      return data.map(post => ({
+      return window.r = data.map(post => ({
         ...post,
         reactions: post.reactions || [],
       }));
@@ -43,6 +43,7 @@ export const useReactions = (postId: number) => {
     queryKey: ['reactions', postId],
     queryFn: async () => {
       const { data, error } = await supabase.from('reactions').select('*, user:users(*)').eq('post_id', postId);
+      console.log(data)
       if (error) throw new Error(error.message);
       return data;
     },
