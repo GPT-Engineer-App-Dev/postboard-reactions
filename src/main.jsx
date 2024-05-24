@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import { ChakraProvider, extendTheme } from "@chakra-ui/react";
+import { QueryClientProviderWrapper } from "./integrations/supabase/api.ts";
 
 const colors = {
   brand: {
@@ -16,7 +17,9 @@ const theme = extendTheme({ colors });
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <ChakraProvider theme={theme}>
-      <App />
+      <QueryClientProviderWrapper>
+        <App />
+      </QueryClientProviderWrapper>
     </ChakraProvider>
   </React.StrictMode>
 );
