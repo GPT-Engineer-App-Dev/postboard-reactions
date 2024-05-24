@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../integrations/supabase/api";
-import { usePosts, useAddPost, useAddReaction } from '../integrations/supabase/api';
+import { usePosts, useAddPost, useAddReaction, useRemoveReaction } from '../integrations/supabase/api';
 import { Container, VStack, Text, Box, Input, Button, HStack, IconButton } from "@chakra-ui/react";
 import { FaThumbsUp, FaThumbsDown, FaLaugh, FaSadTear } from "react-icons/fa";
 
@@ -8,6 +8,7 @@ const Index = () => {
   const { data: posts, isLoading: postsLoading, error: postsError } = usePosts();
   const addPostMutation = useAddPost();
   const addReactionMutation = useAddReaction();
+  const removeReactionMutation = useRemoveReaction();
   const [newPost, setNewPost] = useState("");
   const [userId, setUserId] = useState(null);
 
@@ -29,9 +30,14 @@ const Index = () => {
     setNewPost("");
   };
 
-  const addReaction = (postId, reaction) => {
+  const handleReaction = (postId, reaction) => {
     if (!userId) return;
-    addReactionMutation.mutate({ post_id: postId, emoji: reaction, user_id: userId });
+    const existingReaction = posts.find(post => post.id === postId).reactions.find(r => r.user_id === userId && r.emoji === reaction);
+    if (existingReaction) {
+      removeReactionMutation.mutate({ post_id: postId, user_id: userId, emoji: reaction });
+    } else {
+      addReactionMutation.mutate({ post_id: postId, emoji: reaction, user_id: userId });
+    }
   };
 
   if (postsLoading) return <Text>Loading...</Text>;
@@ -57,27 +63,31 @@ const Index = () => {
                 <IconButton
                   aria-label="Like"
                   icon={<FaThumbsUp />}
-                  onClick={() => addReaction(post.id, "👍")}
+                  onClick={() => handleReaction(post.id, "👍")}
+                  colorScheme={post.reactions.some(r => r.user_id === userId && r.emoji === "👍") ? "blue" : "gray"}
                 />
-                <Text>{post.reactions?.like || 0}</Text>
+                <Text>{post.reactions.filter(r => r.emoji === "👍").length}</Text>
                 <IconButton
                   aria-label="Dislike"
                   icon={<FaThumbsDown />}
-                  onClick={() => addReaction(post.id, "👎")}
+                  onClick={() => handleReaction(post.id, "👎")}
+                  colorScheme={post.reactions.some(r => r.user_id === userId && r.emoji === "👎") ? "blue" : "gray"}
                 />
-                <Text>{post.reactions?.dislike || 0}</Text>
+                <Text>{post.reactions.filter(r => r.emoji === "👎").length}</Text>
                 <IconButton
                   aria-label="Laugh"
                   icon={<FaLaugh />}
-                  onClick={() => addReaction(post.id, "😂")}
+                  onClick={() => handleReaction(post.id, "😂")}
+                  colorScheme={post.reactions.some(r => r.user_id === userId && r.emoji === "😂") ? "blue" : "gray"}
                 />
-                <Text>{post.reactions?.laugh || 0}</Text>
+                <Text>{post.reactions.filter(r => r.emoji === "😂").length}</Text>
                 <IconButton
                   aria-label="Sad"
                   icon={<FaSadTear />}
-                  onClick={() => addReaction(post.id, "😢")}
+                  onClick={() => handleReaction(post.id, "😢")}
+                  colorScheme={post.reactions.some(r => r.user_id === userId && r.emoji === "😢") ? "blue" : "gray"}
                 />
-                <Text>{post.reactions?.sad || 0}</Text>
+                <Text>{post.reactions.filter(r => r.emoji === "😢").length}</Text>
               </HStack>
             </Box>
           ))}
