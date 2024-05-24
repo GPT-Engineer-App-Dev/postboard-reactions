@@ -12,9 +12,14 @@ export const usePosts = () => {
   return useQuery<Post[], Error>({
     queryKey: ['posts'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('posts').select('*');
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*, reactions(*, user:users(*))');
       if (error) throw new Error(error.message);
-      return data;
+      return data.map(post => ({
+        ...post,
+        reactions: post.reactions || [],
+      }));
     },
   });
 };
@@ -37,7 +42,7 @@ export const useReactions = (postId: number) => {
   return useQuery<Reaction[], Error>({
     queryKey: ['reactions', postId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('reactions').select('*').eq('post_id', postId);
+      const { data, error } = await supabase.from('reactions').select('*, user:users(*)').eq('post_id', postId);
       if (error) throw new Error(error.message);
       return data;
     },
@@ -54,6 +59,26 @@ export const useAddReaction = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries(['reactions', data.post_id]);
+      queryClient.invalidateQueries(['posts']);
+    },
+  });
+};
+
+export const useRemoveReaction = () => {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, { post_id: number, user_id: string, emoji: string }>({
+    mutationFn: async ({ post_id, user_id, emoji }) => {
+      const { error } = await supabase
+        .from('reactions')
+        .delete()
+        .eq('post_id', post_id)
+        .eq('user_id', user_id)
+        .eq('emoji', emoji);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries(['reactions', variables.post_id]);
+      queryClient.invalidateQueries(['posts']);
     },
   });
 };
